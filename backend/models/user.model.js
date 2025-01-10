@@ -51,7 +51,14 @@ const userSchema=new mongoose.Schema({
     link:{
         type: String,
         default: ""
-    }
+    },
+    likedPosts:[
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Post',
+            default: []
+        }
+    ],
     // cuz followers is an array of users
 },{ timestamp:true});
 
