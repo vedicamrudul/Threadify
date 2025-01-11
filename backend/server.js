@@ -4,6 +4,7 @@ require('express-async-errors')
 const authRoutes=require('./routes/auth.routes'); 
 const userRoutes=require('./routes/user.routes');
 const postRoutes=require('./routes/post.routes');
+const notificationRoutes=require('./routes/notification.routes');
 
 const {v2: cloudinary} = require('cloudinary');
 const express=require('express');
@@ -25,6 +26,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
+app.use('/api/notifications', notificationRoutes)
 
 app.get('/', (req, res) => {
     res.send('Server is ready');
