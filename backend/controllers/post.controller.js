@@ -10,25 +10,41 @@ const { StatusCodes } = require("http-status-codes");
 const createPost = async (req, res) => {
   const { title, img } = req.body;
   const userId = req.user._id;
-  const userExists = User.findById(userId);
+  const userExists = await User.findById(userId); // Added await
   if (!userExists) {
     return res.status(400).json({ message: "User does not exist" });
   }
 
-  if (!title && !img) {
+  if (!title) {
     return res
       .status(StatusCodes.BAD_REQUEST)
-      .json({ message: "Please Enter Title or Image" });
+      .json({ message: "Please Enter Title" });
   }
 
+  if(!img){
+    await Post.create({ title, postedBy: userId });
+    return res.status(201).json({ message
+      : "Post Created" });
+  }
   await Post.create({ title, img, postedBy: userId });
   res.status(201).json({ message: "Post Created" });
 };
 
+const cleanUpPosts = async () => {
+  const posts = await Post.find();
+  for (const post of posts) {
+    const userExists = await User.exists({ _id: post.postedBy });
+    if (!userExists) {
+      await Post.deleteOne({ _id: post._id });
+    }
+  }
+};
+cleanUpPosts();
+
 const deletePost = async (req, res) => {
   const { postId } = req.params;
   const userId = req.user._id;
-  const userExists = User.findById(userId);
+  const userExists = await User.findById(userId); // Added await
   if (!userExists) {
     return res.status(400).json({ message: "User does not exist" });
   }
@@ -118,7 +134,13 @@ const likePost = async (req, res) => {
       to: post.postedBy,
       type: "like",
     });
-    res.status(StatusCodes.OK).json({ message: "Post Liked" });
+    // instead of this message we want to send the post back to the frontend so that we can update the like count on the frontend. so we will populate the post and send it back.
+    const updatedPost = await Post.findById(postId)
+      .populate({ path: "postedBy", select: "-password" })
+      .populate({ path: "comments.postedBy", select: "-password" });
+
+      console.log(updatedPost)
+    res.status(StatusCodes.OK).json(updatedPost);
   }
 };
 // lets finish getting posts of following people and get all the posts and get liked posts.
@@ -172,20 +194,27 @@ const getLikedPosts = async (req, res) => {
 };
 
 const getAllPosts = async (req, res) => {
-  const user = await User.findById(req.user._id);
-  if (!user) return res.status(404).json({ error: "User not found" });
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-  const result = await Post.find()
-    .populate({
-      path: "postedBy",
-      select: "-password",
-    })
-    .populate({
-      path: "comments.postedBy",
-      select: "-password",
-    });
+   const result = await Post.find()
+  .populate({
+    path: "postedBy",
+    select: "-password",
+  })
+  .populate({
+    path: "comments.postedBy",
+    select: "-password",
+  });
 
-  res.status(StatusCodes.OK).json(result);
+    console.log(result);
+    
+    res.status(StatusCodes.OK).json(result);
+  } catch (error) {
+    console.error("Error in getAllPosts controller: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 const getUserPosts = async (req, res) => {

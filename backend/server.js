@@ -1,6 +1,8 @@
 require('dotenv').config();
 require('express-async-errors')
 
+const cors = require('cors'); 
+
 const authRoutes=require('./routes/auth.routes'); 
 const userRoutes=require('./routes/user.routes');
 const postRoutes=require('./routes/post.routes');
@@ -21,11 +23,12 @@ cloudinary.config({
 const app= express();
 const PORT= process.env.PORT || 8000;
 
+app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // Configure cors
 app.use(express.json()); 
 app.use(cookieParser());
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/post', postRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
 app.use('/api/notifications', notificationRoutes)
 
 app.get('/', (req, res) => {

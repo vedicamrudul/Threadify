@@ -19,8 +19,12 @@ const suggestedUsers = async (req, res) => {
         .status(StatusCodes.BAD_REQUEST)
         .json({ msg: "User not found" });
     }
+
+    const user = await User.findById(userId).select("following");
+    const followingIds = user.following;
+
     const suggestedUsers = await User.aggregate([
-      { $match: { _id: { $ne: userId } } }, // Exclude the current user
+      { $match: { _id: { $ne: userId, $nin: followingIds } } }, // Exclude the current user and users they already follow
       { $sample: { size: 5 } }, // Randomly select 5 users
     ]);
 
